@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Write an Email - SIM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <style>
+        :root {
+            --gmail-blue: #0b57d0;
+            --bg-color: #f6f8fc;
+            --border-color: #dadce0;
+            --text-secondary: #444746;
+        }
+
+        body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Header */
+        header { height: 64px; display: flex; align-items: center; padding: 0 16px; }
+
+        .app-container { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Sidebar */
+        nav { width: 256px; padding: 12px; }
+        .compose-btn {
+            background-color: #c2e7ff; color: #001d35; height: 56px; padding: 0 24px;
+            border-radius: 16px; display: inline-flex; align-items: center; cursor: pointer;
+            font-weight: 500; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .compose-btn:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .nav-item {
+            display: flex; align-items: center; padding: 0 12px 0 26px; height: 32px;
+            border-radius: 16px; cursor: pointer; color: var(--text-secondary); font-size: 14px; margin-bottom: 2px;
+        }
+        .nav-item.active { background-color: #d3e3fd; color: #001d35; font-weight: 500; }
+        .nav-item i { margin-right: 18px; font-size: 20px; }
+
+        /* Main List View */
+        .main-view { flex: 1; background: white; margin: 0 16px 16px 0; border-radius: 16px; border: 1px solid var(--border-color); overflow-y: auto; }
+        .email-item { padding: 10px 16px; border-bottom: 1px solid #f1f1f1; display: flex; align-items: center; font-size: 14px; cursor: pointer; }
+        .email-item:hover { box-shadow: inset 1px 0 0 #dadce0, 0 1px 2px rgba(60,64,67,.3); }
+
+        /* Compose Box */
+        .compose-box {
+            position: fixed; bottom: 0; right: 70px; width: 520px; background: white;
+            border-radius: 10px 10px 0 0; box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+            display: none; flex-direction: column; z-index: 1000; border: 1px solid #ccc;
+        }
+        .comp-header { background: #f2f6fc; padding: 10px 15px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; border-radius: 10px 10px 0 0; }
+        
+        .input-line { border-bottom: 1px solid #f0f0f0; padding: 4px 15px; display: flex; align-items: center; min-height: 40px; }
+        .input-line input { border: none; outline: none; flex: 1; font-size: 14px; }
+        
+        .text-area { flex: 1; min-height: 280px; padding: 15px; border: none; outline: none; resize: none; font-size: 14px; }
+
+        /* Toolbar (Lejjebb hozva, közvetlenül a footer felett vagy a szöveg alatt) */
+        .format-bar { display: flex; align-items: center; padding: 6px 12px; background: #f8fafd; border-top: 1px solid #eee; border-bottom: 1px solid #eee; gap: 4px; }
+        .format-bar i { padding: 6px; border-radius: 4px; cursor: pointer; font-size: 18px; color: #444; }
+        .format-bar i:hover { background: #e1e3e6; }
+        .v-divider { width: 1px; height: 18px; background: #ddd; margin: 0 4px; }
+
+        /* Footer Widgets */
+        .comp-footer { padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+        .send-group { display: flex; background: var(--gmail-blue); border-radius: 20px; overflow: hidden; }
+        .btn-send { color: white; padding: 10px 20px; border: none; background: transparent; font-weight: 500; cursor: pointer; }
+        .send-more { color: white; padding: 10px 8px; border-left: 1px solid rgba(255,255,255,0.2); cursor: pointer; }
+        
+        .widget-icons { display: flex; flex: 1; gap: 2px; color: var(--text-secondary); }
+        .widget-icons i { padding: 8px; cursor: pointer; font-size: 20px; border-radius: 50%; }
+        .widget-icons i:hover { background: #f1f3f4; }
+        .widget-icons i.active { color: #1a73e8; background: #e8f0fe; }
+
+        #snack { position: fixed; bottom: 24px; left: 24px; background: #323232; color: white; padding: 12px 24px; border-radius: 4px; display: none; z-index: 2000; }
+    </style>
+</head>
+<body>
+
+<header>
+    <i class="material-icons-outlined" style="padding:12px; cursor:pointer; border-radius:50%">menu</i>
+    <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png" style="height:32px; margin-left:8px">
+</header>
+
+<div class="app-container">
+    <nav>
+        <div class="compose-btn" onclick="openCompose()">
+            <i class="material-icons-outlined">edit</i> Levél írása
+        </div>
+        <div class="nav-item" id="nav-inbox" onclick="changeTab('inbox')"><i class="material-icons-outlined">inbox</i>Beérkező</div>
+        <div class="nav-item active" id="nav-sent" onclick="changeTab('sent')"><i class="material-icons-outlined">send</i>Elküldött</div>
+        <div class="nav-item" id="nav-drafts" onclick="changeTab('drafts')"><i class="material-icons-outlined">description</i>Piszkozatok</div>
+    </nav>
+
+    <div class="main-view" id="listView"></div>
+</div>
+
+<div class="compose-box" id="composeBox">
+    <div class="comp-header">
+        <span>Új üzenet</span>
+        <i class="material-icons-outlined" style="cursor:pointer; font-size: 18px;" onclick="closeAndSaveDraft()">close</i>
+    </div>
+    <div class="input-line"><input type="text" id="mTo" placeholder="Címzett"></div>
+    <div class="input-line"><input type="text" id="mSub" placeholder="Tárgy"></div>
+    
+    <textarea class="text-area" id="mBody" placeholder="Szövegtörzs"></textarea>
+    
+    <div class="format-bar">
+        <i class="material-icons-outlined">undo</i>
+        <i class="material-icons-outlined">redo</i>
+        <div class="v-divider"></div>
+        <i class="material-icons-outlined">format_bold</i>
+        <i class="material-icons-outlined">format_italic</i>
+        <i class="material-icons-outlined">format_underlined</i>
+        <i class="material-icons-outlined">format_color_text</i>
+        <div class="v-divider"></div>
+        <i class="material-icons-outlined">format_align_left</i>
+        <i class="material-icons-outlined">format_list_bulleted</i>
+    </div>
+
+    <div class="comp-footer">
+        <div class="send-group">
+            <button class="btn-send" onclick="sendEmail()">Küldés</button>
+            <div class="send-more"><i class="material-icons-outlined" style="font-size:18px">arrow_drop_down</i></div>
+        </div>
+        <div class="widget-icons">
+            <i class="material-icons-outlined active">format_color_text</i>
+            <i class="material-icons-outlined">attach_file</i>
+            <i class="material-icons-outlined">link</i>
+            <i class="material-icons-outlined">insert_emoticon</i>
+            <i class="material-icons-outlined">add_to_drive</i>
+            <i class="material-icons-outlined">insert_photo</i>
+            <i class="material-icons-outlined">lock_clock</i>
+        </div>
+        <i class="material-icons-outlined" style="cursor:pointer; color: #444;" onclick="discard()">delete_outline</i>
+    </div>
+</div>
+
+<div id="snack"></div>
+
+<script>
+    let db = {
+        sent: [],
+        drafts: [],
+        inbox: [{to: "Családfakutatas.hu", subject: "Másodkuzinok", body: "Kiderült, hogy Léna nem a másodkuzinja és semmilyen rokonja sem!", date: "12:30"}]
+    };
+    let currentTab = 'sent';
+
+    function openCompose(existingData = null) {
+        if(existingData) {
+            document.getElementById('mTo').value = existingData.to;
+            document.getElementById('mSub').value = existingData.subject;
+            document.getElementById('mBody').value = existingData.body;
+        }
+        document.getElementById('composeBox').style.display = 'flex';
+    }
+
+    function changeTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('nav-' + tab).classList.add('active');
+        render();
+    }
+
+    function render() {
+        const view = document.getElementById('listView');
+        view.innerHTML = '';
+        const list = db[currentTab];
+        
+        if(list.length === 0) {
+            view.innerHTML = '<div style="padding:40px; text-align:center; color:#666;">Itt nem találtunk semmit! Írjon egy új emailt a Levél írása gombra kattintva!</div>';
+            return;
+        }
+
+        list.forEach((m, idx) => {
+            const item = document.createElement('div');
+            item.className = 'email-item';
+            item.onclick = () => {
+                if(currentTab === 'drafts') {
+                    openCompose(m);
+                    db.drafts.splice(idx, 1);
+                    render();
+                }
+            };
+            item.innerHTML = `
+                <i class="material-icons-outlined" style="margin-right:15px; color:#c4c7c5">star_border</i>
+                <div style="width:200px; font-weight:500">${m.to || '(Nincs címzett)'}</div>
+                <div style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+                    <b>${m.subject || '(Nincs tárgy)'}</b> - <span style="color:#666">${m.body}</span>
+                </div>
+                <div style="font-size:12px; color:#666; width: 60px; text-align: right;">${m.date}</div>
+            `;
+            view.appendChild(item);
+        });
+    }
+
+    function sendEmail() {
+        const to = document.getElementById('mTo').value;
+        if(!to.includes('@')) { showSnack("Kérjük, adjon meg egy érvényes email címet!"); return; }
+        
+        db.sent.push({
+            to,
+            subject: document.getElementById('mSub').value,
+            body: document.getElementById('mBody').value,
+            date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+        
+        resetAndClose();
+        showSnack("Üzenet elküldve.");
+        render();
+    }
+
+    function closeAndSaveDraft() {
+        const to = document.getElementById('mTo').value;
+        const sub = document.getElementById('mSub').value;
+        const body = document.getElementById('mBody').value;
+
+        if(to || sub || body) {
+            db.drafts.push({ to, subject: sub, body, date: "Piszkozat" });
+            showSnack("Piszkozat mentve.");
+        }
+        resetAndClose();
+        render();
+    }
+
+    function discard() {
+        resetAndClose();
+        showSnack("Piszkozat elvetve.");
+    }
+
+    function resetAndClose() {
+        document.getElementById('composeBox').style.display = 'none';
+        document.getElementById('mTo').value = '';
+        document.getElementById('mSub').value = '';
+        document.getElementById('mBody').value = '';
+    }
+
+    function showSnack(txt) {
+        const s = document.getElementById('snack');
+        s.innerText = txt;
+        s.style.display = 'block';
+        setTimeout(() => s.style.display = 'none', 3000);
+    }
+
+    render();
+</script>
+
+</body>
+</html>
